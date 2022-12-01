@@ -1,6 +1,6 @@
 #![no_main]
 #![no_std]
-// use panic_semihosting as _;
+use panic_semihosting as _;
 
 extern crate alloc;
 use alloc::sync::Arc;
