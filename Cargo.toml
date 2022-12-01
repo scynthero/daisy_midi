@@ -4,8 +4,57 @@ authors = ["Filip Masiukiewicz <scynthero@gmail.com>"]
 edition = "2018"
 version = "0.0.1"
 
+# - dependencies --------------------------------------------------------------
+
 [dependencies]
+daisy_bsp = { version = "0.5.1", features = ["seed"]  }
+cortex-m = "0.7.5"
+cortex-m-rt = { version = "0.7.1", features = ["device"] }
+stm32h7xx-hal = { version = "0.12.2", features = [ "stm32h750v", "rt", "revision_v", "usb_hs", "xspi" ] }
+cty = "0.2.1"
+cortex-m-semihosting = "0.5.0"
+
+# - optional dependencies used by features
+
+static-alloc = { version = "0.2.3", optional = true }
+without-alloc = { version = "0.2.1", optional = true }
+
+# - optional dependencies used by examples
+
+num = { version = "0.3.1", default-features = false, features = [ "libm"] , optional = true }
+num-derive = { version = "0.3.3", default-features = false, optional = true }
+num-traits = { version = "0.2.14", default-features = false, optional = true }
+
+
+# - dev dependencies ----------------------------------------------------------
+
+[dev-dependencies]
+panic-itm = { version = "0.4.2" }
 panic-halt = "0.2.0"
-cortex-m = "0.6.4"
-cortex-m-rt = { version = "0.6.13", features = ["device"] }
-daisy_bsp = { version = "0.4.1", features = ["seed"]  }
+panic-semihosting = { version = "0.5.6" }
+
+
+# - features ------------------------------------------------------------------
+
+[features]
+default = [ "seed" ]
+alloc = [ "static-alloc", "without-alloc"  ] # requires rust nightly
+seed = []
+pod = []
+petal = []
+patch = []
+field = []
+log-itm = []
+uses_num = [ "num", "num-derive", "num-traits" ]
+
+
+# - profiles ------------------------------------------------------------------
+
+[profile.dev]
+debug = true
+incremental = false
+opt-level = "s" # optimize for binary size
+
+[profile.release]
+debug = true
+opt-level = "s" #  optimize for binary size
