@@ -1,46 +1,49 @@
-ENTRY(Reset_Handler)
-
 MEMORY
 {
-	FLASH (RX)    : ORIGIN = 0x08000000, LENGTH = 128K
-	DTCMRAM (RWX) : ORIGIN = 0x20000000, LENGTH = 128K
-	SRAM (RWX)    : ORIGIN = 0x24000000, LENGTH = 512K
-	RAM_D2 (RWX)  : ORIGIN = 0x30000000, LENGTH = 288K
-	RAM_D3 (RWX)  : ORIGIN = 0x38000000, LENGTH = 64K
-	ITCMRAM (RWX) : ORIGIN = 0x00000000, LENGTH = 64K
-	SDRAM (RWX)   : ORIGIN = 0xc0000000, LENGTH = 64M
-	QSPIFLASH (RX): ORIGIN = 0x90000000, LENGTH = 8M
+  /* FLASH and RAM are mandatory memory regions */
+  FLASH  : ORIGIN = 0x08000000, LENGTH = 128K
+
+  /* DTCM  */
+  RAM    : ORIGIN = 0x20000000, LENGTH = 128K
+
+  /* AXISRAM */
+  AXISRAM : ORIGIN = 0x24000000, LENGTH = 512K
+
+  /* SRAM */
+  SRAM1 : ORIGIN = 0x30000000, LENGTH = 128K
+  SRAM2 : ORIGIN = 0x30020000, LENGTH = 128K
+  SRAM3 : ORIGIN = 0x30040000, LENGTH = 32K
+  SRAM4 : ORIGIN = 0x38000000, LENGTH = 64K
+
+  /* Backup SRAM */
+  BSRAM : ORIGIN = 0x38800000, LENGTH = 4K
+
+  /* Instruction TCM */
+  ITCM  : ORIGIN = 0x00000000, LENGTH = 64K
 }
 
-SECTIONS
-{
-	.sram1_bss (NOLOAD) :
-	{
-		. = ALIGN(4);
-		_ssram1_bss = .;
+/* The location of the stack can be overridden using the
+   `_stack_start` symbol.  Place the stack at the end of RAM */
+_stack_start = ORIGIN(RAM) + LENGTH(RAM);
 
-		PROVIDE(__sram1_bss_start__ = _sram1_bss);
-		*(.sram1_bss)
-		*(.sram1_bss*)
-		. = ALIGN(4);
-		_esram1_bss = .;
+/* The location of the .text section can be overridden using the
+   `_stext` symbol.  By default it will place after .vector_table */
+/* _stext = ORIGIN(FLASH) + 0x40c; */
 
-		PROVIDE(__sram1_bss_end__ = _esram1_bss);
-	} > RAM_D2
-
-	.sdram (NOLOAD) :
-	{
-		. = ALIGN(4);
-		_ssdram_bss = .;
-
-		PROVIDE(__sdram_start = _ssdram_bss);
-		*(.sdram)
-		*(.sdram*)
-		. = ALIGN(4);
-		_esdram = .;
-
-		PROVIDE(__sdram_end = _esdram);
-	} > SDRAM
-
-
-}
+/* These sections are used for some of the examples */
+SECTIONS {
+  .axisram (NOLOAD) : ALIGN(8) {
+    *(.axisram .axisram.*);
+    . = ALIGN(8);
+    } > AXISRAM
+  /* The SRAM1 and SRAM2 section are commonly used as the stack and heap for the
+     CM4 core in dualcore versions and should thus not be used in examples*/
+  .sram3 (NOLOAD) : ALIGN(4) {
+    *(.sram3 .sram3.*);
+    . = ALIGN(4);
+    } > SRAM3
+  .sram4 (NOLOAD) : ALIGN(4) {
+    *(.sram4 .sram4.*);
+    . = ALIGN(4);
+    } > SRAM4
+};
