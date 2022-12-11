@@ -19,6 +19,13 @@ daisy_bsp = { version = "0.5.1", features = ["seed"] }
 # TODO add a monotonic if you use scheduling
 # some-monotonic = "1.2.3"
 
+# usb midi class device
+usb-device = "0.2.9"
+usbd-midi = { git = "https://github.com/btrepp/usbd-midi/" }
+fugit = "0.3.6"
+#num_enum = { version = "0.5.7", default-features = false }
+
+
 # cargo build/run
 [profile.dev]
 codegen-units = 1
