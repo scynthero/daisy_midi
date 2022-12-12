@@ -46,6 +46,7 @@ mod app {
         },
         midi_device::MidiClass,
     };
+    use usbd_midi::data::usb::constants::{USB_AUDIO_CLASS, USB_MIDISTREAMING_SUBCLASS};
 
     static mut EP_MEMORY: [u32; 1024] = [0; 1024];
 
@@ -132,7 +133,8 @@ mod app {
 
         let usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x16c0, 0x5e4))
             .product("daisy midi")
-            .device_class(USB_CLASS_NONE)
+            .device_class(USB_AUDIO_CLASS)
+            .device_sub_class(USB_MIDISTREAMING_SUBCLASS)
             .build();
 
         // Setup the monotonic timer
