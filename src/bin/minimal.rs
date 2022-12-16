@@ -181,10 +181,10 @@ mod app {
 
                         match packet.message {
                             Message::NoteOn(_, _, U7::MIN) | Message::NoteOff(..) => {
-                                local.seed_led.on();
+                                local.seed_led.off();
                             }
                             Message::NoteOn(..) => {
-                                local.seed_led.off();
+                                local.seed_led.on();
                             }
                             _ => {}
                         }
