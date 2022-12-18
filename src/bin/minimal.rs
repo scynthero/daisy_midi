@@ -15,34 +15,20 @@ mod app {
     // #[monotonic(binds = SysTick, default = true)]
     // type DwtMono = DwtSystick<80_000_000>;
     use daisy_bsp::hal::{
-        // stm32,
         usb_hs::{UsbBus, USB2},
-        // timer::{
-        //     Event,
-        //     Timer
-        // },
-        // device,
         rcc::rec::UsbClkSel};
-    // use stm32h7xx_hal::device;
     use daisy_bsp::led::UserLed;
     use daisy_bsp::hal::prelude::*;
     use daisy_bsp::led::Led;
-
-
-    // use num_enum::TryFromPrimitive;
     use usb_device::prelude::*;
     use usbd_midi::{
         data::{
             byte::{
-                // from_traits::FromClamped,
                 u7::U7
             },
             midi::{
-                // channel::Channel as MidiChannel,
                 message::Message,
-                // notes::Note,
             },
-            // usb::constants::USB_CLASS_NONE,
             usb_midi::{
                 midi_packet_reader::MidiPacketBufferReader,
                 // usb_midi_event_packet::UsbMidiEventPacket,
@@ -82,7 +68,6 @@ mod app {
         let device = cx.device;
 
         let board = daisy_bsp::Board::take().unwrap();
-        // let dp = device::Peripherals::take().unwrap();
         let mut ccdr = board.freeze_clocks(
             device.PWR.constrain(),
             device.RCC.constrain(),
@@ -91,13 +76,6 @@ mod app {
         let _ = ccdr.clocks.hsi48_ck().expect("HSI48 must run");
         ccdr.peripheral.kernel_usb_clk_mux(UsbClkSel::HSI48);
 
-        // let mut timer2 = device
-        //     .TIM2
-        //     .timer(
-        //         fugit::Rate::<u32, 1, 1>::from_raw(20), // 200ms - 1/1*20 Hz
-        //         ccdr.peripheral.TIM2, &mut ccdr.clocks,
-        //     );
-        // timer2.listen(Event::TimeOut);
         let pins = board.split_gpios(
             device.GPIOA.split(ccdr.peripheral.GPIOA),
             device.GPIOB.split(ccdr.peripheral.GPIOB),
@@ -107,16 +85,11 @@ mod app {
             device.GPIOF.split(ccdr.peripheral.GPIOF),
             device.GPIOG.split(ccdr.peripheral.GPIOG),
         );
-        // let gpioa = dp.GPIOA.split(ccdr.peripheral.GPIOA);
 
         let mut led_user = UserLed::new(pins.LED_USER);
         defmt::info!("Passed creating led_user");
         led_user.off();
         led_user.on();
-
-        // let mut ccdr = System::init_clocks(device.PWR, device.RCC, &device.SYSCFG);
-        // let _ = ccdr.clocks.hsi48_ck().expect("HSI48 must run");
-        // ccdr.peripheral.kernel_usb_clk_mux(UsbClkSel::HSI48);
 
         let usb = USB2::new(
             device.OTG2_HS_GLOBAL,
