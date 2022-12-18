@@ -18,7 +18,7 @@ cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 daisy_bsp = { version = "0.5.1", features = ["seed"] }
 # TODO add a monotonic if you use scheduling
 # some-monotonic = "1.2.3"
-
+stm32h7xx-hal = { version = "0.12.2", features = ["stm32h750v","rt","fmc", "xspi", "sdmmc", "sdmmc-fatfs", "usb_hs"] }
 # usb midi class device
 usb-device = "0.2.9"
 usbd-midi = { git = "https://github.com/btrepp/usbd-midi/" }

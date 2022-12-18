@@ -3,15 +3,19 @@
 
 use daisy_midi as _; // global logger + panicking-behavior + memory layout
 
+
 #[rtic::app(
-device = daisy_bsp::hal::pac, // TODO: Replace `some_hal::pac` with the path to the PAC
-dispatchers = [TIM2], // TODO: Replace the `FreeInterrupt1, ...` with free interrupt vectors if software tasks are used
+// device = stm32h7xx_hal::stm32,
+device = daisy_bsp::hal::pac,
+// dispatchers = [TIM2],
 peripherals = true,
 )]
 mod app {
     // TODO: Add a monotonic if scheduling will be used
     // #[monotonic(binds = SysTick, default = true)]
     // type DwtMono = DwtSystick<80_000_000>;
+    use stm32h7xx_hal;
+    use daisy_bsp::pac;
     use daisy_bsp::hal::{
         // stm32,
         usb_hs::{UsbBus, USB2},
@@ -21,6 +25,7 @@ mod app {
         // },
         device,
         rcc::rec::UsbClkSel};
+    // use stm32h7xx_hal::device;
     use daisy_bsp::led::UserLed;
     use daisy_bsp::hal::prelude::*;
     use daisy_bsp::led::Led;
@@ -74,11 +79,11 @@ mod app {
         let device = cx.device;
 
         let board = daisy_bsp::Board::take().unwrap();
-        let dp = device::Peripherals::take().unwrap();
+        // let dp = device::Peripherals::take().unwrap();
         let mut ccdr = board.freeze_clocks(
-            dp.PWR.constrain(),
-            dp.RCC.constrain(),
-            &dp.SYSCFG,
+            device.PWR.constrain(),
+            device.RCC.constrain(),
+            &device.SYSCFG,
         );
         let _ = ccdr.clocks.hsi48_ck().expect("HSI48 must run");
         ccdr.peripheral.kernel_usb_clk_mux(UsbClkSel::HSI48);
@@ -91,13 +96,13 @@ mod app {
         //     );
         // timer2.listen(Event::TimeOut);
         let pins = board.split_gpios(
-            dp.GPIOA.split(ccdr.peripheral.GPIOA),
-            dp.GPIOB.split(ccdr.peripheral.GPIOB),
-            dp.GPIOC.split(ccdr.peripheral.GPIOC),
-            dp.GPIOD.split(ccdr.peripheral.GPIOD),
-            dp.GPIOE.split(ccdr.peripheral.GPIOE),
-            dp.GPIOF.split(ccdr.peripheral.GPIOF),
-            dp.GPIOG.split(ccdr.peripheral.GPIOG),
+            device.GPIOA.split(ccdr.peripheral.GPIOA),
+            device.GPIOB.split(ccdr.peripheral.GPIOB),
+            device.GPIOC.split(ccdr.peripheral.GPIOC),
+            device.GPIOD.split(ccdr.peripheral.GPIOD),
+            device.GPIOE.split(ccdr.peripheral.GPIOE),
+            device.GPIOF.split(ccdr.peripheral.GPIOF),
+            device.GPIOG.split(ccdr.peripheral.GPIOG),
         );
         // let gpioa = dp.GPIOA.split(ccdr.peripheral.GPIOA);
         let (pin_dm, pin_dp) = {
@@ -111,6 +116,7 @@ mod app {
 
         let mut led_user = UserLed::new(pins.LED_USER);
         led_user.off();
+        led_user.on();
         // let mut ccdr = System::init_clocks(device.PWR, device.RCC, &device.SYSCFG);
         // let _ = ccdr.clocks.hsi48_ck().expect("HSI48 must run");
         // ccdr.peripheral.kernel_usb_clk_mux(UsbClkSel::HSI48);
@@ -133,8 +139,9 @@ mod app {
 
         let usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x16c0, 0x5e4))
             .product("daisy midi")
-            .device_class(USB_AUDIO_CLASS)
-            .device_sub_class(USB_MIDISTREAMING_SUBCLASS)
+            // .device_class(USB_AUDIO_CLASS)
+            // .device_sub_class(USB_MIDISTREAMING_SUBCLASS)
+            .device_class(USB_CLASS_NONE)
             .build();
 
         // Setup the monotonic timer
@@ -160,7 +167,7 @@ mod app {
         defmt::info!("idle");
 
         loop {
-            continue;
+            cortex_m::asm::nop();
         }
     }
 
@@ -178,17 +185,15 @@ mod app {
             if let Ok(size) = midi.read(&mut buffer) {
                 let buffer_reader = MidiPacketBufferReader::new(&buffer, size);
                 for packet in buffer_reader.flatten() {
-
-                        match packet.message {
-                            Message::NoteOn(_, _, U7::MIN) | Message::NoteOff(..) => {
-                                local.seed_led.off();
-                            }
-                            Message::NoteOn(..) => {
-                                local.seed_led.on();
-                            }
-                            _ => {}
+                    match packet.message {
+                        Message::NoteOn(_, _, U7::MIN) | Message::NoteOff(..) => {
+                            local.seed_led.off();
                         }
-
+                        Message::NoteOn(..) => {
+                            local.seed_led.on();
+                        }
+                        _ => {}
+                    }
                 }
             }
         });
