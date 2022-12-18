@@ -11,11 +11,9 @@ device = daisy_bsp::hal::pac,
 peripherals = true,
 )]
 mod app {
-    // TODO: Add a monotonic if scheduling will be used
+    // Add a monotonic if scheduling will be used
     // #[monotonic(binds = SysTick, default = true)]
     // type DwtMono = DwtSystick<80_000_000>;
-    use stm32h7xx_hal;
-    use daisy_bsp::pac;
     use daisy_bsp::hal::{
         // stm32,
         usb_hs::{UsbBus, USB2},
@@ -23,12 +21,13 @@ mod app {
         //     Event,
         //     Timer
         // },
-        device,
+        // device,
         rcc::rec::UsbClkSel};
     // use stm32h7xx_hal::device;
     use daisy_bsp::led::UserLed;
     use daisy_bsp::hal::prelude::*;
     use daisy_bsp::led::Led;
+
 
     // use num_enum::TryFromPrimitive;
     use usb_device::prelude::*;
@@ -43,7 +42,7 @@ mod app {
                 message::Message,
                 // notes::Note,
             },
-            usb::constants::USB_CLASS_NONE,
+            // usb::constants::USB_CLASS_NONE,
             usb_midi::{
                 midi_packet_reader::MidiPacketBufferReader,
                 // usb_midi_event_packet::UsbMidiEventPacket,
@@ -51,14 +50,19 @@ mod app {
         },
         midi_device::MidiClass,
     };
-    use usbd_midi::data::usb::constants::{USB_AUDIO_CLASS, USB_MIDISTREAMING_SUBCLASS};
+    use usbd_midi::data::usb::constants::{
+        USB_AUDIO_CLASS,
+        USB_MIDISTREAMING_SUBCLASS,
+    };
+    use usb_device::{
+        prelude::{UsbDevice},
+    };
 
     static mut EP_MEMORY: [u32; 1024] = [0; 1024];
 
     // Shared resources go here
     #[shared]
     struct Shared {
-        // TODO: Add resources
         usb: (
             UsbDevice<'static, UsbBus<USB2>>,
             MidiClass<'static, UsbBus<USB2>>,
@@ -68,7 +72,6 @@ mod app {
     // Local resources go here
     #[local]
     struct Local {
-        // TODO: Add resources
         seed_led: UserLed,
         // timer2: Timer<stm32::TIM2>,
     }
@@ -105,18 +108,12 @@ mod app {
             device.GPIOG.split(ccdr.peripheral.GPIOG),
         );
         // let gpioa = dp.GPIOA.split(ccdr.peripheral.GPIOA);
-        let (pin_dm, pin_dp) = {
-            (
-                // pins.SEED_PIN_11.into_alternate_af10(),
-                // pins.SEED_PIN_12.into_alternate_af10(),
-                pins.USB2.DN.into_alternate(),
-                pins.USB2.DP.into_alternate(),
-            )
-        };
 
         let mut led_user = UserLed::new(pins.LED_USER);
+        defmt::info!("Passed creating led_user");
         led_user.off();
         led_user.on();
+
         // let mut ccdr = System::init_clocks(device.PWR, device.RCC, &device.SYSCFG);
         // let _ = ccdr.clocks.hsi48_ck().expect("HSI48 must run");
         // ccdr.peripheral.kernel_usb_clk_mux(UsbClkSel::HSI48);
@@ -125,25 +122,33 @@ mod app {
             device.OTG2_HS_GLOBAL,
             device.OTG2_HS_DEVICE,
             device.OTG2_HS_PWRCLK,
-            pin_dm,
-            pin_dp,
+            pins.USB2.DN.into_alternate(),
+            pins.USB2.DP.into_alternate(),
             ccdr.peripheral.USB2OTG,
             &ccdr.clocks,
         );
+        defmt::info!("Passed defining USB");
+
         let usb_bus = cortex_m::singleton!(
             : usb_device::class_prelude::UsbBusAllocator<UsbBus<USB2>> =
                 UsbBus::new(usb, unsafe { &mut EP_MEMORY })
-        )
-            .unwrap();
-        let midi = MidiClass::new(usb_bus, 1, 1).unwrap();
+        ).unwrap();
+        defmt::info!("Passed creating USB bus");
 
+        let midi = MidiClass::new(usb_bus, 1, 1).unwrap();
+        defmt::info!("Passed creating MidiClass");
+
+        // TODO: fix here - doesn't go past this build call
         let usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x16c0, 0x5e4))
             .product("daisy midi")
-            // .device_class(USB_AUDIO_CLASS)
-            // .device_sub_class(USB_MIDISTREAMING_SUBCLASS)
-            .device_class(USB_CLASS_NONE)
+            .device_class(USB_AUDIO_CLASS)
+            .device_sub_class(USB_MIDISTREAMING_SUBCLASS)
+            // .device_class(USB_CLASS_NONE)
             .build();
+        defmt::info!("Passed creating USB device");
 
+
+        led_user.off();
         // Setup the monotonic timer
         (
             Shared {
